@@ -177,6 +177,34 @@ func TestEditing(t *testing.T) {
 	}
 }
 
+type statRecordFS struct {
+	fs.FS
+	cb func(string)
+}
+
+func (fsys statRecordFS) Stat(name string) (fs.FileInfo, error) {
+	var _ fs.StatFS = statRecordFS{}
+	fsys.cb(name)
+	return fs.Stat(fsys.FS, name)
+}
+func TestStat(t *testing.T) {
+	var counter int
+	fs := statRecordFS{
+		FS: fstest.MapFS{
+			"a.txt": &fstest.MapFile{},
+			"b.txt": &fstest.MapFile{},
+			"c.txt": &fstest.MapFile{},
+			"d.txt": &fstest.MapFile{},
+			"e.txt": &fstest.MapFile{},
+		},
+		cb: func(string) { counter++ },
+	}
+
+	w := Watcher{FilesPerCycle: 1}
+	_ = slices.Collect(w.ScanCycles(fs, 2))
+	assertEquals(t, counter, 3)
+}
+
 func TestWait(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		mapfs := fstest.MapFS{}
