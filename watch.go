@@ -4,20 +4,26 @@ import (
 	"io/fs"
 )
 
-type globber struct {
-	files *[]string
-}
+func walk(fsys fs.FS, root string) []string {
+	var rt []string
 
-func (g globber) walkDirFunc(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fs.SkipDir
+		}
+		if d.IsDir() && d.Name()[0] == '.' {
+			return fs.SkipDir
+		}
+
+		if !d.IsDir() {
+			rt = append(rt, p)
+		}
+		return nil
+	})
+
 	if err != nil {
-		return fs.SkipDir
+		// This shouldn't happen
+		panic(err)
 	}
-	if d.IsDir() && d.Name()[0] == '.' {
-		return fs.SkipDir
-	}
-
-	if !d.IsDir() {
-		*g.files = append(*g.files, p)
-	}
-	return nil
+	return rt
 }

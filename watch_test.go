@@ -41,11 +41,7 @@ func TestGlobber(t *testing.T) {
 	assert := func(arg string, want ...string) {
 		t.Helper()
 
-		var got []string
-		err := fs.WalkDir(mapfs, arg, globber{&got}.walkDirFunc)
-		if err != nil {
-			t.Error(err)
-		}
+		got := walk(mapfs, arg)
 
 		if fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Error("got", got, "    want", want)
