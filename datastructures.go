@@ -40,7 +40,7 @@ func (s *lruSet) put(value string) {
 	s.cache[value] = elem
 }
 
-func (s *lruSet) toSlice() []string {
+func (s *lruSet) slice() []string {
 	var result []string
 	for elem := s.list.Front(); elem != nil; elem = elem.Next() {
 		result = append(result, elem.Value.(string))
