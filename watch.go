@@ -27,3 +27,15 @@ func walk(fsys fs.FS, root string) []string {
 	}
 	return rt
 }
+
+type watcher struct {
+	lastModified int64
+}
+
+func statTime(fsys fs.FS, f string) int64 {
+	stat, err := fs.Stat(fsys, f)
+	if err != nil {
+		return 0
+	}
+	return stat.ModTime().UnixMilli()
+}
