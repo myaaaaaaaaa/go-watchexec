@@ -20,7 +20,7 @@ func (fsys errorFS) Open(name string) (fs.File, error) {
 	return fsys.FS.Open(name)
 }
 
-func TestGlobber(t *testing.T) {
+func TestWalk(t *testing.T) {
 	mapfs := errorFS{fstest.MapFS{
 		"a/f":            &fstest.MapFile{},
 		"b/d/d/d/.f.txt": &fstest.MapFile{},
