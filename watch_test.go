@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -41,7 +43,7 @@ func TestWalk(t *testing.T) {
 	assert := func(arg string, want ...string) {
 		t.Helper()
 
-		got := walk(mapfs, arg)
+		got := slices.Sorted(maps.Keys(walk(mapfs, arg)))
 
 		if fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Error("got", got, "    want", want)

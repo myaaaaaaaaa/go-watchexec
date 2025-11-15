@@ -2,10 +2,11 @@ package watchexec
 
 import (
 	"io/fs"
+	"maps"
 )
 
-func walk(fsys fs.FS, root string) []string {
-	var rt []string
+func walk(fsys fs.FS, root string) map[string]int64 {
+	rt := map[string]int64{}
 
 	err := fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -16,7 +17,7 @@ func walk(fsys fs.FS, root string) []string {
 		}
 
 		if !d.IsDir() {
-			rt = append(rt, p)
+			rt[p] = 0
 		}
 		return nil
 	})
@@ -30,6 +31,13 @@ func walk(fsys fs.FS, root string) []string {
 
 type watcher struct {
 	lastModified int64
+	files        map[string]int64
+}
+
+func (w *watcher) reindex(fsys fs.FS) {
+	f := walk(fsys, ".")
+	maps.Insert(f, maps.All(w.files))
+	w.files = f
 }
 
 func statTime(fsys fs.FS, f string) int64 {
