@@ -179,10 +179,20 @@ func TestEditing(t *testing.T) {
 
 func TestWait(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		start := time.Now()
-		for range 60 {
-			time.Sleep(time.Second)
+		mapfs := fstest.MapFS{}
+		touch(mapfs, "a.txt", 2)
+		touch(mapfs, "b.txt", 4)
+		touch(mapfs, "c.txt", 7)
+
+		for n := range 8 {
+			w := Watcher{
+				FilesPerCycle: n + 1,
+				Wait:          time.Minute,
+			}
+
+			start := time.Now()
+			_ = slices.Collect(w.ScanCycles(mapfs, 60))
+			assertEquals(t, time.Since(start), time.Hour)
 		}
-		assertEquals(t, time.Since(start), time.Minute)
 	})
 }
