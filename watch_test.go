@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 type errorFS struct {
@@ -27,9 +28,9 @@ func TestWalk(t *testing.T) {
 		"a/f":            &fstest.MapFile{},
 		"b/d/d/d/.f.txt": &fstest.MapFile{},
 		"c/d/.d/d/f.txt": &fstest.MapFile{},
-		".d.txt":         &fstest.MapFile{},
-		".e.txt/d/d/f":   &fstest.MapFile{},
-		".f.txt/d/f.txt": &fstest.MapFile{},
+		".d":             &fstest.MapFile{},
+		".e/d/d/f":       &fstest.MapFile{},
+		".f/d/f.txt":     &fstest.MapFile{},
 
 		"y/1/f.txt":       &fstest.MapFile{},
 		"y/2/error/f.txt": &fstest.MapFile{},
@@ -53,9 +54,9 @@ func TestWalk(t *testing.T) {
 	assert("a", "a/f")
 	assert("b", "b/d/d/d/.f.txt")
 	assert("c", "")
-	assert(".d.txt", ".d.txt")
-	assert(".e.txt", "")
-	assert(".f.txt", "")
+	assert(".d", ".d")
+	assert(".e", "")
+	assert(".f", "")
 
 	assert("y",
 		"y/1/f.txt",
@@ -67,4 +68,38 @@ func TestWalk(t *testing.T) {
 		"z/2/f.txt",
 		"z/3/f.txt",
 	)
+}
+
+func TestScan(t *testing.T) {
+	mapfs := fstest.MapFS{
+		"a.txt": &fstest.MapFile{ModTime: time.UnixMilli(1)},
+		"b.txt": &fstest.MapFile{ModTime: time.UnixMilli(2)},
+		"c.txt": &fstest.MapFile{ModTime: time.UnixMilli(3)},
+	}
+
+	var w watcher
+	w.reindex(mapfs)
+
+	want := "[a.txt b.txt c.txt]"
+	got := slices.Collect(w.scan(mapfs))
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
+	}
+
+	got = slices.Collect(w.scan(mapfs))
+	if len(got) != 0 {
+		t.Error(got)
+	}
+
+	mapfs["a.txt"].ModTime = time.UnixMilli(4)
+	want = "[a.txt]"
+	got = slices.Collect(w.scan(mapfs))
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
+	}
+
+	got = slices.Collect(w.scan(mapfs))
+	if len(got) != 0 {
+		t.Error(got)
+	}
 }
