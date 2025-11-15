@@ -75,8 +75,9 @@ func (w *watcher) scan(fsys fs.FS) iter.Seq[string] {
 func (w *watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		var likelyEditing []string
+		it := w.scan(fsys)
 		for {
-			for s := range w.scan(fsys) {
+			for s := range it {
 				if s == "" {
 					s = w.statUpdate(fsys, likelyEditing)
 				}
