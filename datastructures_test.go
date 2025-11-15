@@ -23,9 +23,9 @@ func TestLruSet(t *testing.T) {
 		s.put("a")
 		s.put("b")
 		s.put("c")
-		s.put("a")
+		s.put("b")
 
-		expected := []string{"a", "c", "b"}
+		expected := []string{"b", "c", "a"}
 		if got := s.toSlice(); !reflect.DeepEqual(got, expected) {
 			t.Errorf("toSlice() = %v, want %v", got, expected)
 		}
