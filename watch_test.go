@@ -195,4 +195,11 @@ func TestWait(t *testing.T) {
 			assertEquals(t, time.Since(start), time.Hour)
 		}
 	})
+
+	synctest.Test(t, func(t *testing.T) {
+		w := Watcher{Wait: time.Minute}
+		start := time.Now()
+		_ = slices.Collect(w.ScanCycles(fstest.MapFS{}, 60))
+		assertEquals(t, time.Since(start), time.Hour)
+	})
 }

@@ -61,7 +61,11 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 }
 func (w *Watcher) scan(fsys fs.FS) iter.Seq[string] {
 	chunkSize := max(1, w.FilesPerCycle)
-	chunks := slices.Chunk(slices.Sorted(maps.Keys(w.files)), chunkSize)
+	scanList := slices.Sorted(maps.Keys(w.files))
+	if len(scanList) == 0 {
+		scanList = append(scanList, ".")
+	}
+	chunks := slices.Chunk(scanList, chunkSize)
 
 	return func(yield func(string) bool) {
 		for chunk := range chunks {
