@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"testing/synctest"
 	"time"
 )
 
@@ -174,4 +175,14 @@ func TestEditing(t *testing.T) {
 		touch(mapfs, "b.txt", 20+n)
 		assertEquals(t, next(), "b.txt")
 	}
+}
+
+func TestWait(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		start := time.Now()
+		for range 60 {
+			time.Sleep(time.Second)
+		}
+		assertEquals(t, time.Since(start), time.Minute)
+	})
 }
