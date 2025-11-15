@@ -2,6 +2,8 @@ package watchexec
 
 import "container/list"
 
+type set[T comparable] = map[T]struct{}
+
 type lruSet struct {
 	capacity int
 	list     *list.List

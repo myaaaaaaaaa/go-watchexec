@@ -8,10 +8,8 @@ import (
 	"time"
 )
 
-type fsIndex = map[string]struct{}
-
-func walk(fsys fs.FS, root string) fsIndex {
-	rt := fsIndex{}
+func walk(fsys fs.FS, root string) set[string] {
+	rt := set[string]{}
 
 	err := fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -42,7 +40,7 @@ type watcher struct {
 	wait          time.Duration
 
 	lastModified int64
-	files        fsIndex
+	files        set[string]
 }
 
 func (w *watcher) reindex(fsys fs.FS) {
