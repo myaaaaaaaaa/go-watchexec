@@ -5,7 +5,7 @@ import (
 )
 
 func TestLruSet(t *testing.T) {
-	t.Run("put and toSlice", func(t *testing.T) {
+	t.Run("put and slice", func(t *testing.T) {
 		s := newLruSet(3)
 		s.put("a")
 		s.put("b")

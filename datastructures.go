@@ -10,8 +10,8 @@ type lruSet struct {
 	cache    map[string]*list.Element
 }
 
-func newLruSet(capacity int) *lruSet {
-	return &lruSet{
+func newLruSet(capacity int) lruSet {
+	return lruSet{
 		capacity: capacity,
 		list:     list.New(),
 		cache:    make(map[string]*list.Element),
