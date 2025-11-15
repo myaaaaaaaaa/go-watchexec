@@ -58,14 +58,17 @@ func (w *watcher) scan(fsys fs.FS) iter.Seq[string] {
 		for chunk := range chunks {
 			time.Sleep(w.wait)
 
+			s := ""
 			for _, file := range chunk {
 				modified := statTime(fsys, file)
 				if w.lastModified < modified {
+					s = file
 					w.lastModified = modified
-					if !yield(file) {
-						return
-					}
 				}
+			}
+
+			if !yield(s) {
+				return
 			}
 		}
 	}

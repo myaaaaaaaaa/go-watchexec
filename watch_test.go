@@ -71,35 +71,49 @@ func TestWalk(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	mapfs := fstest.MapFS{
-		"a.txt": &fstest.MapFile{ModTime: time.UnixMilli(1)},
-		"b.txt": &fstest.MapFile{ModTime: time.UnixMilli(2)},
-		"c.txt": &fstest.MapFile{ModTime: time.UnixMilli(3)},
+	mapfs := fstest.MapFS{}
+
+	for i := range 7 {
+		i := int64(i) + 1
+		mapfs[fmt.Sprintf("%d.txt", i)] = &fstest.MapFile{ModTime: time.UnixMilli(i)}
 	}
 
 	var w watcher
 	w.reindex(mapfs)
 
-	want := "[a.txt b.txt c.txt]"
+	{
+		w := w
+		w.filesPerCycle = 2
+
+		want := "[2.txt 4.txt]"
+		got := slices.Collect(w.ScanCycles(mapfs, 2))
+		if fmt.Sprint(got) != fmt.Sprint(want) {
+			t.Error("got", got, "    want", want)
+		}
+	}
+
+	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt]"
 	got := slices.Collect(w.scan(mapfs))
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Error("got", got, "    want", want)
 	}
 
-	got = slices.Collect(w.scan(mapfs))
-	if len(got) != 0 {
-		t.Error(got)
-	}
-
-	mapfs["a.txt"].ModTime = time.UnixMilli(4)
-	want = "[a.txt]"
+	want = "[      ]"
 	got = slices.Collect(w.scan(mapfs))
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Error("got", got, "    want", want)
 	}
 
+	mapfs["4.txt"].ModTime = time.UnixMilli(20)
+	want = "[   4.txt   ]"
 	got = slices.Collect(w.scan(mapfs))
-	if len(got) != 0 {
-		t.Error(got)
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
+	}
+
+	want = "[      ]"
+	got = slices.Collect(w.scan(mapfs))
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
 	}
 }
