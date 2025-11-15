@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"iter"
 	"maps"
 	"slices"
 	"strings"
@@ -74,12 +75,16 @@ func TestWalk(t *testing.T) {
 	)
 }
 
+func touch(mapfs fstest.MapFS, name string, i int) {
+	mapfs[name] = &fstest.MapFile{ModTime: time.UnixMilli(int64(i))}
+}
+
 func TestScan(t *testing.T) {
 	mapfs := fstest.MapFS{}
 
 	for i := range 7 {
-		i := int64(i) + 1
-		mapfs[fmt.Sprintf("%d.txt", i)] = &fstest.MapFile{ModTime: time.UnixMilli(i)}
+		i := i + 1
+		touch(mapfs, fmt.Sprintf("%d.txt", i), i)
 	}
 
 	var w watcher
@@ -119,5 +124,56 @@ func TestScan(t *testing.T) {
 		want = "[         ]"
 		got = slices.Collect(w.ScanCycles(mapfs, 10))
 		assertEquals(t, got, want)
+	}
+}
+
+func pullInf[T any](it iter.Seq[T]) (func() T, func()) {
+	next, done := iter.Pull(it)
+	return func() T {
+		rt, ok := next()
+		if !ok {
+			panic("iterator not infinite")
+		}
+		return rt
+	}, done
+}
+
+func TestEditing(t *testing.T) {
+	mapfs := fstest.MapFS{}
+	touch(mapfs, "a.txt", 2)
+	touch(mapfs, "b.txt", 4)
+	touch(mapfs, "c.txt", 7)
+
+	var w watcher
+	w.reindex(mapfs)
+
+	next, done := pullInf(w.ScanCycles(mapfs, 1000))
+	defer done()
+
+	assertEquals(t, next(), "a.txt")
+	assertEquals(t, next(), "b.txt")
+	assertEquals(t, next(), "c.txt")
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+
+	touch(mapfs, "b.txt", 10)
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "b.txt")
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+
+	touch(mapfs, "b.txt", 11)
+	assertEquals(t, next(), "b.txt")
+	assertEquals(t, next(), "")
+
+	for n := range 7 {
+		for range n {
+			assertEquals(t, next(), "")
+		}
+		touch(mapfs, "b.txt", 20+n)
+		assertEquals(t, next(), "b.txt")
 	}
 }

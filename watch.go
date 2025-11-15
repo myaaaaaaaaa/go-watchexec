@@ -48,6 +48,17 @@ func (w *watcher) reindex(fsys fs.FS) {
 	maps.Insert(f, maps.All(w.files))
 	w.files = f
 }
+func (w *watcher) statUpdate(fsys fs.FS, files []string) string {
+	s := ""
+	for _, file := range files {
+		modified := statTime(fsys, file)
+		if w.lastModified < modified {
+			s = file
+			w.lastModified = modified
+		}
+	}
+	return s
+}
 func (w *watcher) scan(fsys fs.FS) iter.Seq[string] {
 	chunkSize := max(1, w.filesPerCycle)
 	chunks := slices.Chunk(slices.Sorted(maps.Keys(w.files)), chunkSize)
@@ -55,17 +66,7 @@ func (w *watcher) scan(fsys fs.FS) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		for chunk := range chunks {
 			time.Sleep(w.wait)
-
-			s := ""
-			for _, file := range chunk {
-				modified := statTime(fsys, file)
-				if w.lastModified < modified {
-					s = file
-					w.lastModified = modified
-				}
-			}
-
-			if !yield(s) {
+			if !yield(w.statUpdate(fsys, chunk)) {
 				return
 			}
 		}
@@ -73,8 +74,17 @@ func (w *watcher) scan(fsys fs.FS) iter.Seq[string] {
 }
 func (w *watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	return func(yield func(string) bool) {
+		var likelyEditing []string
 		for {
 			for s := range w.scan(fsys) {
+				if s == "" {
+					s = w.statUpdate(fsys, likelyEditing)
+				}
+				if s != "" {
+					cap := max(1, w.filesPerCycle)
+					likelyEditing = lruPut(likelyEditing, s, cap)
+				}
+
 				if !yield(s) {
 					return
 				}
