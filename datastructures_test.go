@@ -4,48 +4,48 @@ import (
 	"testing"
 )
 
-func TestLruSet(t *testing.T) {
-	t.Run("put and slice", func(t *testing.T) {
-		s := newLruSet(3)
-		s.put("a")
-		s.put("b")
-		s.put("c")
+func TestLruPut(t *testing.T) {
+	t.Run("put", func(t *testing.T) {
+		var s []string
+		s = lruPut(s, "a", 3)
+		s = lruPut(s, "b", 3)
+		s = lruPut(s, "c", 3)
 
-		assertEquals(t, s.slice(), "[c b a]")
+		assertEquals(t, s, "[c b a]")
 	})
 
 	t.Run("put refreshes existing element", func(t *testing.T) {
-		s := newLruSet(3)
-		s.put("a")
-		s.put("b")
-		s.put("c")
-		s.put("b")
+		var s []string
+		s = lruPut(s, "a", 3)
+		s = lruPut(s, "b", 3)
+		s = lruPut(s, "c", 3)
+		s = lruPut(s, "b", 3)
 
-		assertEquals(t, s.slice(), "[b c a]")
+		assertEquals(t, s, "[b c a]")
 	})
 
 	t.Run("put evicts oldest element", func(t *testing.T) {
-		s := newLruSet(3)
-		s.put("a")
-		s.put("b")
-		s.put("c")
-		s.put("d")
+		var s []string
+		s = lruPut(s, "a", 3)
+		s = lruPut(s, "b", 3)
+		s = lruPut(s, "c", 3)
+		s = lruPut(s, "d", 3)
 
-		assertEquals(t, s.slice(), "[d c b]")
+		assertEquals(t, s, "[d c b]")
 	})
 
 	t.Run("put with zero capacity", func(t *testing.T) {
-		s := newLruSet(0)
-		s.put("a")
+		var s []string
+		s = lruPut(s, "a", 0)
 
-		assertEquals(t, s.slice(), "[]")
+		assertEquals(t, s, "[]")
 	})
 
 	t.Run("put with one capacity", func(t *testing.T) {
-		s := newLruSet(1)
-		s.put("a")
-		s.put("b")
+		var s []string
+		s = lruPut(s, "a", 1)
+		s = lruPut(s, "b", 1)
 
-		assertEquals(t, s.slice(), "[b]")
+		assertEquals(t, s, "[b]")
 	})
 }
