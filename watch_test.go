@@ -23,6 +23,13 @@ func (fsys errorFS) Open(name string) (fs.File, error) {
 	return fsys.FS.Open(name)
 }
 
+func assertEquals(t *testing.T, got any, want any) {
+	t.Helper()
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
+	}
+}
+
 func TestWalk(t *testing.T) {
 	mapfs := errorFS{fstest.MapFS{
 		"a/f":            &fstest.MapFile{},
@@ -45,10 +52,7 @@ func TestWalk(t *testing.T) {
 		t.Helper()
 
 		got := slices.Sorted(maps.Keys(walk(mapfs, arg)))
-
-		if fmt.Sprint(got) != fmt.Sprint(want) {
-			t.Error("got", got, "    want", want)
-		}
+		assertEquals(t, got, want)
 	}
 
 	assert("a", "a/f")
@@ -85,35 +89,24 @@ func TestScan(t *testing.T) {
 		w := w
 		w.filesPerCycle = 2
 
-		want := "[2.txt 4.txt]"
 		got := slices.Collect(w.ScanCycles(mapfs, 2))
-		if fmt.Sprint(got) != fmt.Sprint(want) {
-			t.Error("got", got, "    want", want)
-		}
+		assertEquals(t, got, "[2.txt 4.txt]")
 	}
 
 	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt]"
 	got := slices.Collect(w.scan(mapfs))
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Error("got", got, "    want", want)
-	}
+	assertEquals(t, got, want)
 
 	want = "[      ]"
 	got = slices.Collect(w.scan(mapfs))
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Error("got", got, "    want", want)
-	}
+	assertEquals(t, got, want)
 
 	mapfs["4.txt"].ModTime = time.UnixMilli(20)
 	want = "[   4.txt   ]"
 	got = slices.Collect(w.scan(mapfs))
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Error("got", got, "    want", want)
-	}
+	assertEquals(t, got, want)
 
 	want = "[      ]"
 	got = slices.Collect(w.scan(mapfs))
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Error("got", got, "    want", want)
-	}
+	assertEquals(t, got, want)
 }
