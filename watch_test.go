@@ -87,19 +87,18 @@ func TestScan(t *testing.T) {
 		touch(mapfs, fmt.Sprintf("%d.txt", i), i)
 	}
 
-	var w watcher
-	w.reindex(mapfs)
-
 	{
-		w := w
-		w.filesPerCycle = 2
+		var w Watcher
+		w.FilesPerCycle = 2
 
 		got := slices.Collect(w.ScanCycles(mapfs, 2))
 		assertEquals(t, got, "[2.txt 4.txt]")
 	}
 
-	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt]"
-	got := slices.Collect(w.scan(mapfs))
+	var w Watcher
+
+	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt   ]"
+	got := slices.Collect(w.ScanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
@@ -120,7 +119,7 @@ func TestScan(t *testing.T) {
 	}
 
 	for n := range 4 {
-		w.filesPerCycle = n
+		w.FilesPerCycle = n
 		want = "[         ]"
 		got = slices.Collect(w.ScanCycles(mapfs, 10))
 		assertEquals(t, got, want)
@@ -144,8 +143,7 @@ func TestEditing(t *testing.T) {
 	touch(mapfs, "b.txt", 4)
 	touch(mapfs, "c.txt", 7)
 
-	var w watcher
-	w.reindex(mapfs)
+	var w Watcher
 
 	next, done := pullInf(w.ScanCycles(mapfs, 1000))
 	defer done()

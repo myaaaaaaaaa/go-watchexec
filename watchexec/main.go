@@ -20,6 +20,19 @@ func isTerminal(f fs.File) bool {
 func main() {
 	args := os.Args[1:]
 
+	if !isTerminal(os.Stdout) {
+		var w watchexec.Watcher
+		w.FilesPerCycle = 4
+		w.Wait = time.Millisecond * 50
+
+		for {
+			for f := range w.ScanCycles(os.DirFS("."), 100) {
+				if f != "" {
+					fmt.Println(f)
+				}
+			}
+		}
+	}
 	if len(args) > 0 {
 		for {
 			watchexec.ExecOutput(os.Stderr, args)
@@ -28,8 +41,5 @@ func main() {
 	}
 	if isTerminal(os.Stdin) {
 		fmt.Println("stdin is terminal")
-	}
-	if isTerminal(os.Stdout) {
-		fmt.Println("stdout is terminal")
 	}
 }
