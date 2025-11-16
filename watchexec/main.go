@@ -26,6 +26,7 @@ func watch(f func(string)) {
 		for file := range w.ScanCycles(os.DirFS("."), 100) {
 			if file != "" {
 				f(file)
+				w.LastModified = time.Now().UnixMilli() // TODO: test this somehow
 			}
 		}
 	}

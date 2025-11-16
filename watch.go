@@ -37,10 +37,10 @@ func walk(fsys fs.FS, root string) set[string] {
 
 type Watcher struct {
 	FilesPerCycle int
+	LastModified  int64
 	Wait          time.Duration
 
-	lastModified int64
-	files        set[string]
+	files set[string]
 }
 
 func (w *Watcher) reindex(fsys fs.FS) {
@@ -52,9 +52,9 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 	s := ""
 	for _, file := range files {
 		modified := statTime(fsys, file)
-		if w.lastModified < modified {
+		if w.LastModified < modified {
 			s = file
-			w.lastModified = modified
+			w.LastModified = modified
 		}
 	}
 	return s
