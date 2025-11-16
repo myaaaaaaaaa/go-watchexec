@@ -32,6 +32,11 @@ func walk(fsys fs.FS) set[string] {
 		// This shouldn't happen
 		panic(err)
 	}
+
+	if len(rt) == 0 {
+		rt["."] = struct{}{}
+	}
+
 	return rt
 }
 

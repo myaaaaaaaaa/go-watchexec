@@ -60,7 +60,7 @@ func TestWalk(t *testing.T) {
 
 	assert("a", "f")
 	assert("b", "d/d/d/.f.txt")
-	assert("c", "")
+	assert("c", ".")
 	assert(".d", "d/d/f")
 	assert(".e", "d/f.txt")
 
