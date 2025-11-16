@@ -103,19 +103,19 @@ func TestScan(t *testing.T) {
 	assertEquals(t, got, want)
 
 	for range 3 {
-		want = "[      ]"
-		got = slices.Collect(w.scan(mapfs))
+		want = "[         ]"
+		got = slices.Collect(w.ScanCycles(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
 	mapfs["4.txt"].ModTime = time.UnixMilli(20)
-	want = "[   4.txt   ]"
-	got = slices.Collect(w.scan(mapfs))
+	want = "[   4.txt      ]"
+	got = slices.Collect(w.ScanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
-		want = "[      ]"
-		got = slices.Collect(w.scan(mapfs))
+		want = "[         ]"
+		got = slices.Collect(w.ScanCycles(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
