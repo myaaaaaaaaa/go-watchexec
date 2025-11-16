@@ -19,8 +19,8 @@ func isTerminal(f fs.File) bool {
 
 func watch(f func(string)) {
 	var w watchexec.Watcher
-	w.FilesPerCycle = 4
-	w.Wait = time.Millisecond * 50
+	w.FilesAtOnce = 4
+	w.WaitBetweenPolls = time.Millisecond * 50
 
 	for {
 		for file := range w.ScanCycles(os.DirFS("."), 100) {

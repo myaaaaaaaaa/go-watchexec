@@ -90,7 +90,7 @@ func TestScan(t *testing.T) {
 
 	{
 		var w Watcher
-		w.FilesPerCycle = 2
+		w.FilesAtOnce = 2
 
 		got := slices.Collect(w.ScanCycles(mapfs, 2))
 		assertEquals(t, got, "[2.txt 4.txt]")
@@ -120,7 +120,7 @@ func TestScan(t *testing.T) {
 	}
 
 	for n := range 4 {
-		w.FilesPerCycle = n
+		w.FilesAtOnce = n
 		want = "[         ]"
 		got = slices.Collect(w.ScanCycles(mapfs, 10))
 		assertEquals(t, got, want)
@@ -200,7 +200,7 @@ func TestStat(t *testing.T) {
 		cb: func(string) { counter++ },
 	}
 
-	w := Watcher{FilesPerCycle: 1}
+	w := Watcher{FilesAtOnce: 1}
 	_ = slices.Collect(w.ScanCycles(fs, 2))
 	assertEquals(t, counter, 3)
 }
@@ -214,8 +214,8 @@ func TestWait(t *testing.T) {
 
 		for n := range 8 {
 			w := Watcher{
-				FilesPerCycle: n + 1,
-				Wait:          time.Minute,
+				FilesAtOnce:      n + 1,
+				WaitBetweenPolls: time.Minute,
 			}
 
 			start := time.Now()
@@ -225,7 +225,7 @@ func TestWait(t *testing.T) {
 	})
 
 	synctest.Test(t, func(t *testing.T) {
-		w := Watcher{Wait: time.Minute}
+		w := Watcher{WaitBetweenPolls: time.Minute}
 		start := time.Now()
 		_ = slices.Collect(w.ScanCycles(fstest.MapFS{}, 60))
 		assertEquals(t, time.Since(start), time.Hour)

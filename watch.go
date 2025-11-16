@@ -35,9 +35,9 @@ func walk(fsys fs.FS, root string) set[string] {
 }
 
 type Watcher struct {
-	FilesPerCycle int
-	LastModified  int64
-	Wait          time.Duration
+	FilesAtOnce      int
+	LastModified     int64
+	WaitBetweenPolls time.Duration
 
 	files set[string]
 }
@@ -62,20 +62,20 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 func (w *Watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	w.reindex(fsys)
 
-	filesPerCycle := max(1, w.FilesPerCycle)
+	filesAtOnce := max(1, w.FilesAtOnce)
 
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		for chunk := range repeatChunks(slices.Sorted(maps.Keys(w.files)), filesPerCycle, cycles) {
-			time.Sleep(w.Wait)
+		for chunk := range repeatChunks(slices.Sorted(maps.Keys(w.files)), filesAtOnce, cycles) {
+			time.Sleep(w.WaitBetweenPolls)
 
 			s := w.statUpdate(fsys, chunk)
 			if s == "" {
 				s = w.statUpdate(fsys, likelyEditing)
 			}
 			if s != "" {
-				cap := filesPerCycle
+				cap := filesAtOnce
 				likelyEditing = lruPut(likelyEditing, s, cap)
 			}
 
