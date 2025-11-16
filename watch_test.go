@@ -231,3 +231,38 @@ func TestWait(t *testing.T) {
 		assertEquals(t, time.Since(start), time.Hour)
 	})
 }
+
+func TestRunFor(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var counter int
+		w := Watcher{WaitBetweenPolls: time.Minute}
+		start := time.Now()
+		w.RunFor(time.Hour, fstest.MapFS{}, func(string) {
+			counter++
+		})
+		assertEquals(t, time.Since(start), time.Hour)
+		assertEquals(t, counter, 0)
+	})
+
+	synctest.Test(t, func(t *testing.T) {
+		var counter int
+		start := time.Now()
+		mapfs := fstest.MapFS{}
+		for i := range 7 {
+			mapfs[fmt.Sprintf("%d.txt", i)] = &fstest.MapFile{
+				ModTime: start.Add(time.Second),
+			}
+		}
+		w := Watcher{WaitBetweenPolls: time.Minute}
+
+		w.RunFor(time.Hour, mapfs, func(string) {
+			time.Sleep(time.Minute * 2)
+			for _, f := range mapfs {
+				f.ModTime = time.Now()
+			}
+			time.Sleep(time.Minute * 2)
+			counter++
+		})
+		assertEquals(t, counter, 1)
+	})
+}

@@ -65,6 +65,15 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 	return s
 }
 
+func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
+	for file := range w.ScanCycles(fsys, int(t/w.WaitBetweenPolls)) {
+		if file != "" {
+			f(file)
+			w.LastModified = time.Now().UnixMilli()
+		}
+	}
+}
+
 func (w *Watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	w.reindex(fsys)
 
