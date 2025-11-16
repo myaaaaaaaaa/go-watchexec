@@ -10,7 +10,6 @@ func TestLruPut(t *testing.T) {
 		s = lruPut(s, "a", 3)
 		s = lruPut(s, "b", 3)
 		s = lruPut(s, "c", 3)
-
 		assertEquals(t, s, "[c b a]")
 	})
 
@@ -20,7 +19,6 @@ func TestLruPut(t *testing.T) {
 		s = lruPut(s, "b", 3)
 		s = lruPut(s, "c", 3)
 		s = lruPut(s, "b", 3)
-
 		assertEquals(t, s, "[b c a]")
 	})
 
@@ -30,14 +28,12 @@ func TestLruPut(t *testing.T) {
 		s = lruPut(s, "b", 3)
 		s = lruPut(s, "c", 3)
 		s = lruPut(s, "d", 3)
-
 		assertEquals(t, s, "[d c b]")
 	})
 
 	t.Run("put with zero capacity", func(t *testing.T) {
 		var s []string
 		s = lruPut(s, "a", 0)
-
 		assertEquals(t, s, "[]")
 	})
 
@@ -45,7 +41,6 @@ func TestLruPut(t *testing.T) {
 		var s []string
 		s = lruPut(s, "a", 1)
 		s = lruPut(s, "b", 1)
-
 		assertEquals(t, s, "[b]")
 	})
 }

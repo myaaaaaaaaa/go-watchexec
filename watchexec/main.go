@@ -41,7 +41,7 @@ func main() {
 		})
 	}
 	if len(args) > 0 {
-		watch(func(_ string) {
+		watch(func(string) {
 			watchexec.ExecOutput(os.Stderr, args)
 		})
 	}

@@ -21,7 +21,6 @@ func walk(fsys fs.FS, root string) set[string] {
 				return fs.SkipDir
 			}
 		}
-
 		if !d.IsDir() {
 			rt[p] = struct{}{}
 		}

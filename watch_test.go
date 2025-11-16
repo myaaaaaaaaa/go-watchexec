@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+func assertEquals(t *testing.T, got any, want any) {
+	t.Helper()
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Error("got", got, "    want", want)
+	}
+}
+
 type errorFS struct {
 	fs.FS
 }
@@ -23,13 +30,6 @@ func (fsys errorFS) Open(name string) (fs.File, error) {
 		return nil, errors.New("error file: " + name)
 	}
 	return fsys.FS.Open(name)
-}
-
-func assertEquals(t *testing.T, got any, want any) {
-	t.Helper()
-	if fmt.Sprint(got) != fmt.Sprint(want) {
-		t.Error("got", got, "    want", want)
-	}
 }
 
 func TestWalk(t *testing.T) {
