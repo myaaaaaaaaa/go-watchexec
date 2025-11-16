@@ -8,22 +8,23 @@ import (
 	"time"
 )
 
-func walk(fsys fs.FS, root string) set[string] {
+func walk(fsys fs.FS) set[string] {
 	rt := set[string]{}
 
-	err := fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fs.SkipDir
 		}
-		if d.IsDir() {
-			name := d.Name()
-			if len(name) > 1 && name[0] == '.' {
+
+		if p == "." {
+		} else if !d.IsDir() {
+			rt[p] = struct{}{}
+		} else if d.IsDir() {
+			if d.Name()[0] == '.' {
 				return fs.SkipDir
 			}
 		}
-		if !d.IsDir() {
-			rt[p] = struct{}{}
-		}
+
 		return nil
 	})
 
@@ -43,7 +44,7 @@ type Watcher struct {
 }
 
 func (w *Watcher) reindex(fsys fs.FS) {
-	f := walk(fsys, ".")
+	f := walk(fsys)
 	maps.Insert(f, maps.All(w.files))
 	w.files = f
 }

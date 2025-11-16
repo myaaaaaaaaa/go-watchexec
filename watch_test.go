@@ -37,9 +37,8 @@ func TestWalk(t *testing.T) {
 		"a/f":            &fstest.MapFile{},
 		"b/d/d/d/.f.txt": &fstest.MapFile{},
 		"c/d/.d/d/f.txt": &fstest.MapFile{},
-		".d":             &fstest.MapFile{},
-		".e/d/d/f":       &fstest.MapFile{},
-		".f/d/f.txt":     &fstest.MapFile{},
+		".d/d/d/f":       &fstest.MapFile{},
+		".e/d/f.txt":     &fstest.MapFile{},
 
 		"y/1/f.txt":       &fstest.MapFile{},
 		"y/2/error/f.txt": &fstest.MapFile{},
@@ -53,26 +52,27 @@ func TestWalk(t *testing.T) {
 	assert := func(arg string, want ...string) {
 		t.Helper()
 
-		got := slices.Sorted(maps.Keys(walk(mapfs, arg)))
+		fsys, err := fs.Sub(mapfs, arg)
+		assertEquals(t, err, nil)
+		got := slices.Sorted(maps.Keys(walk(fsys)))
 		assertEquals(t, got, want)
 	}
 
-	assert("a", "a/f")
-	assert("b", "b/d/d/d/.f.txt")
+	assert("a", "f")
+	assert("b", "d/d/d/.f.txt")
 	assert("c", "")
-	assert(".d", ".d")
-	assert(".e", "")
-	assert(".f", "")
+	assert(".d", "d/d/f")
+	assert(".e", "d/f.txt")
 
 	assert("y",
-		"y/1/f.txt",
-		"y/3/f.txt",
+		"1/f.txt",
+		"3/f.txt",
 	)
 
 	assert("z",
-		"z/1/f.txt",
-		"z/2/f.txt",
-		"z/3/f.txt",
+		"1/f.txt",
+		"2/f.txt",
+		"3/f.txt",
 	)
 }
 
