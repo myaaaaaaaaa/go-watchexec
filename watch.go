@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"iter"
 	"maps"
+	"slices"
 	"time"
 )
 
@@ -66,7 +67,7 @@ func (w *Watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		for chunk := range repeatChunks(w.files, filesPerCycle, cycles) {
+		for chunk := range repeatChunks(slices.Sorted(maps.Keys(w.files)), filesPerCycle, cycles) {
 			time.Sleep(w.Wait)
 
 			s := w.statUpdate(fsys, chunk)

@@ -1,9 +1,7 @@
 package watchexec
 
 import (
-	"cmp"
 	"iter"
-	"maps"
 	"slices"
 )
 
@@ -17,17 +15,15 @@ func lruPut[T comparable](s []T, value T, cap int) []T {
 	s = (s)[:min(len(s), cap)]
 	return s
 }
-func repeatChunks[T cmp.Ordered](s set[T], chunkSize, numChunks int) iter.Seq[[]T] {
-	scanList := slices.Sorted(maps.Keys(s))
-	if len(scanList) == 0 {
-		var zero T
-		scanList = append(scanList, zero)
+func repeatChunks[T any](scanList []T, chunkSize, numChunks int) iter.Seq[[]T] {
+	chunks := slices.Collect(slices.Chunk(scanList, chunkSize))
+	if len(chunks) == 0 {
+		chunks = append(chunks, nil)
 	}
-	chunks := slices.Chunk(scanList, chunkSize)
 
 	return func(yield func([]T) bool) {
 		for {
-			for chunk := range chunks {
+			for _, chunk := range chunks {
 				if !yield(chunk) {
 					return
 				}
