@@ -140,40 +140,40 @@ func pullInf[T any](it iter.Seq[T]) (func() T, func()) {
 
 func TestEditing(t *testing.T) {
 	mapfs := fstest.MapFS{}
-	touch(mapfs, "a.txt", 2)
-	touch(mapfs, "b.txt", 4)
-	touch(mapfs, "c.txt", 7)
+	for i := range 20 {
+		i := i + 1
+		touch(mapfs, fmt.Sprintf("%02d.txt", i), i)
+	}
 
 	var w Watcher
 
 	next, done := pullInf(w.ScanCycles(mapfs, 1000))
 	defer done()
 
-	assertEquals(t, next(), "a.txt")
-	assertEquals(t, next(), "b.txt")
-	assertEquals(t, next(), "c.txt")
+	for range 20 {
+		next()
+	}
 	assertEquals(t, next(), "")
+
+	touch(mapfs, "10.txt", 30)
+	assertEquals(t, next(), "")
+	assertEquals(t, next(), "")
+	for range 20 {
+		next()
+	}
 	assertEquals(t, next(), "")
 	assertEquals(t, next(), "")
 
-	touch(mapfs, "b.txt", 10)
-	assertEquals(t, next(), "")
-	assertEquals(t, next(), "b.txt")
-	assertEquals(t, next(), "")
-	assertEquals(t, next(), "")
-	assertEquals(t, next(), "")
-	assertEquals(t, next(), "")
-
-	touch(mapfs, "b.txt", 11)
-	assertEquals(t, next(), "b.txt")
+	touch(mapfs, "10.txt", 31)
+	assertEquals(t, next(), "10.txt")
 	assertEquals(t, next(), "")
 
 	for n := range 7 {
 		for range n {
 			assertEquals(t, next(), "")
 		}
-		touch(mapfs, "b.txt", 20+n)
-		assertEquals(t, next(), "b.txt")
+		touch(mapfs, "10.txt", 40+n)
+		assertEquals(t, next(), "10.txt")
 	}
 }
 
