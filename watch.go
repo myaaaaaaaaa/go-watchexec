@@ -42,10 +42,10 @@ func walk(fsys fs.FS) set[string] {
 
 type Watcher struct {
 	FilesAtOnce      int
-	LastModified     int64
 	WaitBetweenPolls time.Duration
 
-	files set[string]
+	lastModified int64
+	files        set[string]
 }
 
 func (w *Watcher) reindex(fsys fs.FS) {
@@ -57,24 +57,24 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 	s := ""
 	for _, file := range files {
 		modified := statTime(fsys, file)
-		if w.LastModified < modified {
+		if w.lastModified < modified {
 			s = file
-			w.LastModified = modified
+			w.lastModified = modified
 		}
 	}
 	return s
 }
 
 func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
-	for file := range w.ScanCycles(fsys, int(t/w.WaitBetweenPolls)) {
+	for file := range w.scanCycles(fsys, int(t/w.WaitBetweenPolls)) {
 		if file != "" {
 			f(file)
-			w.LastModified = time.Now().UnixMilli()
+			w.lastModified = time.Now().UnixMilli()
 		}
 	}
 }
 
-func (w *Watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
+func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	w.reindex(fsys)
 
 	filesAtOnce := max(1, w.FilesAtOnce)

@@ -92,37 +92,37 @@ func TestScan(t *testing.T) {
 		var w Watcher
 		w.FilesAtOnce = 2
 
-		got := slices.Collect(w.ScanCycles(mapfs, 2))
+		got := slices.Collect(w.scanCycles(mapfs, 2))
 		assertEquals(t, got, "[2.txt 4.txt]")
 	}
 
 	var w Watcher
 
 	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt   ]"
-	got := slices.Collect(w.ScanCycles(mapfs, 10))
+	got := slices.Collect(w.scanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
 		want = "[         ]"
-		got = slices.Collect(w.ScanCycles(mapfs, 10))
+		got = slices.Collect(w.scanCycles(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
 	mapfs["4.txt"].ModTime = time.UnixMilli(20)
 	want = "[   4.txt      ]"
-	got = slices.Collect(w.ScanCycles(mapfs, 10))
+	got = slices.Collect(w.scanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
 		want = "[         ]"
-		got = slices.Collect(w.ScanCycles(mapfs, 10))
+		got = slices.Collect(w.scanCycles(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
 	for n := range 4 {
 		w.FilesAtOnce = n
 		want = "[         ]"
-		got = slices.Collect(w.ScanCycles(mapfs, 10))
+		got = slices.Collect(w.scanCycles(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 }
@@ -147,7 +147,7 @@ func TestEditing(t *testing.T) {
 
 	var w Watcher
 
-	next, done := pullInf(w.ScanCycles(mapfs, 1000))
+	next, done := pullInf(w.scanCycles(mapfs, 1000))
 	defer done()
 
 	for range 20 {
@@ -201,7 +201,7 @@ func TestStat(t *testing.T) {
 	}
 
 	w := Watcher{FilesAtOnce: 1}
-	_ = slices.Collect(w.ScanCycles(fs, 2))
+	_ = slices.Collect(w.scanCycles(fs, 2))
 	assertEquals(t, counter, 3)
 }
 
@@ -219,7 +219,7 @@ func TestWait(t *testing.T) {
 			}
 
 			start := time.Now()
-			_ = slices.Collect(w.ScanCycles(mapfs, 60))
+			_ = slices.Collect(w.scanCycles(mapfs, 60))
 			assertEquals(t, time.Since(start), time.Hour)
 		}
 	})
@@ -227,7 +227,7 @@ func TestWait(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		w := Watcher{WaitBetweenPolls: time.Minute}
 		start := time.Now()
-		_ = slices.Collect(w.ScanCycles(fstest.MapFS{}, 60))
+		_ = slices.Collect(w.scanCycles(fstest.MapFS{}, 60))
 		assertEquals(t, time.Since(start), time.Hour)
 	})
 }
