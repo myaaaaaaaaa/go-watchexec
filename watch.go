@@ -4,7 +4,6 @@ import (
 	"io/fs"
 	"iter"
 	"maps"
-	"slices"
 	"time"
 )
 
@@ -58,46 +57,29 @@ func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 	}
 	return s
 }
-func (w *Watcher) scan(fsys fs.FS) iter.Seq[string] {
-	chunkSize := max(1, w.FilesPerCycle)
-	scanList := slices.Sorted(maps.Keys(w.files))
-	if len(scanList) == 0 {
-		scanList = append(scanList, ".")
-	}
-	chunks := slices.Chunk(scanList, chunkSize)
 
-	return func(yield func(string) bool) {
-		for chunk := range chunks {
-			time.Sleep(w.Wait)
-			if !yield(w.statUpdate(fsys, chunk)) {
-				return
-			}
-		}
-	}
-}
 func (w *Watcher) ScanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	w.reindex(fsys)
 
+	filesPerCycle := max(1, w.FilesPerCycle)
+
 	return func(yield func(string) bool) {
 		var likelyEditing []string
-		it := w.scan(fsys)
-		for {
-			for s := range it {
-				if s == "" {
-					s = w.statUpdate(fsys, likelyEditing)
-				}
-				if s != "" {
-					cap := max(1, w.FilesPerCycle)
-					likelyEditing = lruPut(likelyEditing, s, cap)
-				}
 
-				if !yield(s) {
-					return
-				}
-				cycles--
-				if cycles <= 0 {
-					return
-				}
+		for chunk := range repeatChunks(w.files, filesPerCycle, cycles) {
+			time.Sleep(w.Wait)
+
+			s := w.statUpdate(fsys, chunk)
+			if s == "" {
+				s = w.statUpdate(fsys, likelyEditing)
+			}
+			if s != "" {
+				cap := filesPerCycle
+				likelyEditing = lruPut(likelyEditing, s, cap)
+			}
+
+			if !yield(s) {
+				return
 			}
 		}
 	}
