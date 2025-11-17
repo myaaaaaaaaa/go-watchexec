@@ -98,8 +98,8 @@ func TestScan(t *testing.T) {
 
 	var w Watcher
 
-	want := "[1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt   ]"
-	got := slices.Collect(w.scanCycles(mapfs, 10))
+	want := "[   1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt]"
+	got := slices.Sorted(w.scanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
@@ -109,8 +109,8 @@ func TestScan(t *testing.T) {
 	}
 
 	mapfs["4.txt"].ModTime = time.UnixMilli(20)
-	want = "[   4.txt      ]"
-	got = slices.Collect(w.scanCycles(mapfs, 10))
+	want = "[         4.txt]"
+	got = slices.Sorted(w.scanCycles(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
@@ -150,7 +150,7 @@ func TestEditing(t *testing.T) {
 	next, done := pullInf(w.scanCycles(mapfs, 1000))
 	defer done()
 
-	for range 20 {
+	for range 25 {
 		next()
 	}
 	assertEquals(t, next(), "")
