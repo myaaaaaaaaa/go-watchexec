@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
@@ -28,9 +29,16 @@ func ExecOutput(out io.Writer, args []string) {
 	cmd.Stdout = out
 	cmd.Stderr = out
 
+	header := strings.Join([]string{
+		"",
+		time.Now().Format("3:04:05 PM"),
+		strings.Join(args, " "),
+		"",
+	}, "  ◄►  ")
+
 	// Home cursor; Clear formatting; Clear screen x2
 	const CLEAR = "\x1b[H\x1b[0m\x1b[2J\x1b[3J"
-	fmt.Fprintln(out, CLEAR+wrapColor("\x1b[2K ◄► "+strings.Join(args, " ")+" ◄► ", 1))
+	fmt.Fprintln(out, CLEAR+wrapColor("\x1b[2K"+header, 1))
 	err := cmd.Run()
 
 	if err != nil {
