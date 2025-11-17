@@ -16,9 +16,9 @@ func walk(fsys fs.FS) set[string] {
 			return fs.SkipDir
 		}
 
+		rt[p] = struct{}{}
 		if p == "." {
 		} else if !d.IsDir() {
-			rt[p] = struct{}{}
 		} else if d.IsDir() {
 			if d.Name()[0] == '.' {
 				return fs.SkipDir
@@ -31,10 +31,6 @@ func walk(fsys fs.FS) set[string] {
 	if err != nil {
 		// This shouldn't happen
 		panic(err)
-	}
-
-	if len(rt) == 0 {
-		rt["."] = struct{}{}
 	}
 
 	return rt

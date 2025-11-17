@@ -34,11 +34,11 @@ func (fsys errorFS) Open(name string) (fs.File, error) {
 
 func TestWalk(t *testing.T) {
 	mapfs := errorFS{fstest.MapFS{
-		"a/f":            &fstest.MapFile{},
-		"b/d/d/d/.f.txt": &fstest.MapFile{},
-		"c/d/.d/d/f.txt": &fstest.MapFile{},
-		".d/d/d/f":       &fstest.MapFile{},
-		".e/d/f.txt":     &fstest.MapFile{},
+		"a/f":          &fstest.MapFile{},
+		"b/d/d/.f.txt": &fstest.MapFile{},
+		"c/d/.d/f.txt": &fstest.MapFile{},
+		".d/d/f":       &fstest.MapFile{},
+		".e/d/f.txt":   &fstest.MapFile{},
 
 		"y/1/f.txt":       &fstest.MapFile{},
 		"y/2/error/f.txt": &fstest.MapFile{},
@@ -58,21 +58,39 @@ func TestWalk(t *testing.T) {
 		assertEquals(t, got, want)
 	}
 
-	assert("a", "f")
-	assert("b", "d/d/d/.f.txt")
-	assert("c", ".")
-	assert(".d", "d/d/f")
-	assert(".e", "d/f.txt")
+	assert("a",
+		".",
+		"f",
+	)
+	assert("b",
+		".",
+		"d", "d/d", "d/d/.f.txt",
+	)
+	assert("c",
+		".",
+		"d", "d/.d",
+	)
+	assert(".d",
+		".",
+		"d", "d/f",
+	)
+	assert(".e",
+		".",
+		"d", "d/f.txt",
+	)
 
 	assert("y",
-		"1/f.txt",
-		"3/f.txt",
+		".",
+		"1", "1/f.txt",
+		"2", "2/error",
+		"3", "3/f.txt",
 	)
 
 	assert("z",
-		"1/f.txt",
-		"2/f.txt",
-		"3/f.txt",
+		".",
+		"1", "1/f.txt",
+		"2", "2/f.txt",
+		"3", "3/f.txt",
 	)
 }
 
@@ -90,10 +108,10 @@ func TestScan(t *testing.T) {
 
 	{
 		var w Watcher
-		w.FilesAtOnce = 2
+		w.FilesAtOnce = 3
 
 		got := slices.Collect(w.scanCycles(mapfs, 2))
-		assertEquals(t, got, "[2.txt 4.txt]")
+		assertEquals(t, got, "[2.txt 5.txt]")
 	}
 
 	var w Watcher
