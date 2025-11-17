@@ -3,37 +3,36 @@ package watchexec
 import (
 	"io/fs"
 	"iter"
-	"maps"
-	"slices"
 	"time"
 )
 
-func walk(fsys fs.FS) set[string] {
-	rt := set[string]{}
-
-	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fs.SkipDir
-		}
-
-		rt[p] = struct{}{}
-		if p == "." {
-		} else if !d.IsDir() {
-		} else if d.IsDir() {
-			if d.Name()[0] == '.' {
+func walk(fsys fs.FS) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
 				return fs.SkipDir
 			}
+
+			if !yield(p) {
+				return fs.SkipAll
+			}
+
+			if p == "." {
+			} else if !d.IsDir() {
+			} else if d.IsDir() {
+				if d.Name()[0] == '.' {
+					return fs.SkipDir
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			// This shouldn't happen
+			panic(err)
 		}
-
-		return nil
-	})
-
-	if err != nil {
-		// This shouldn't happen
-		panic(err)
 	}
-
-	return rt
 }
 
 type Watcher struct {
@@ -41,14 +40,8 @@ type Watcher struct {
 	WaitBetweenPolls time.Duration
 
 	lastModified int64
-	files        set[string]
 }
 
-func (w *Watcher) reindex(fsys fs.FS) {
-	f := walk(fsys)
-	maps.Insert(f, maps.All(w.files))
-	w.files = f
-}
 func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
 	s := ""
 	for _, file := range files {
@@ -71,15 +64,12 @@ func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
 }
 
 func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
-	w.reindex(fsys)
-
 	filesAtOnce := max(1, w.FilesAtOnce)
 
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		files := slices.Values(slices.Sorted(maps.Keys(w.files)))
-		for chunk := range repeatChunks(files, filesAtOnce, cycles) {
+		for chunk := range repeatChunks(walk(fsys), filesAtOnce, cycles) {
 			time.Sleep(w.WaitBetweenPolls)
 
 			s := w.statUpdate(fsys, chunk)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"iter"
-	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -54,7 +53,7 @@ func TestWalk(t *testing.T) {
 
 		fsys, err := fs.Sub(mapfs, arg)
 		assertEquals(t, err, nil)
-		got := slices.Sorted(maps.Keys(walk(fsys)))
+		got := slices.Sorted(walk(fsys))
 		assertEquals(t, got, want)
 	}
 
