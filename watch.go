@@ -40,9 +40,9 @@ type Watcher struct {
 	lastModified int64
 }
 
-func (w *Watcher) updateModified(fsys fs.FS, files []string) string {
-	s := ""
-	for _, file := range files {
+func (w *Watcher) pollAndUpdate(fsys fs.FS, filesToPoll []string) string {
+	modifiedFile := ""
+	for _, file := range filesToPoll {
 		modifiedTime := int64(0)
 
 		stat, err := fs.Stat(fsys, file)
@@ -51,15 +51,15 @@ func (w *Watcher) updateModified(fsys fs.FS, files []string) string {
 		}
 
 		if w.lastModified < modifiedTime {
-			s = file
+			modifiedFile = file
 			w.lastModified = modifiedTime
 		}
 	}
-	return s
+	return modifiedFile
 }
 
 func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
-	for file := range w.scanCycles(fsys, int(t/w.WaitBetweenPolls)) {
+	for file := range w.iterations(fsys, int(t/w.WaitBetweenPolls)) {
 		if file != "" {
 			f(file)
 			w.lastModified = time.Now().UnixMilli()
@@ -67,24 +67,24 @@ func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
 	}
 }
 
-func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
+func (w *Watcher) iterations(fsys fs.FS, cycles int) iter.Seq[string] {
 	filesAtOnce := max(1, w.FilesAtOnce)
 
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		for chunk := range repeatChunks(walk(fsys), filesAtOnce, cycles) {
+		for filesToPoll := range repeatChunks(walk(fsys), filesAtOnce, cycles) {
 			time.Sleep(w.WaitBetweenPolls)
 
-			s := w.updateModified(fsys, chunk)
-			if s == "" {
-				s = w.updateModified(fsys, likelyEditing)
+			modifiedFile := w.pollAndUpdate(fsys, filesToPoll)
+			if modifiedFile == "" {
+				modifiedFile = w.pollAndUpdate(fsys, likelyEditing)
 			}
-			if s != "" {
-				likelyEditing = lruPut(likelyEditing, s, filesAtOnce)
+			if modifiedFile != "" {
+				likelyEditing = lruPut(likelyEditing, modifiedFile, filesAtOnce)
 			}
 
-			if !yield(s) {
+			if !yield(modifiedFile) {
 				return
 			}
 		}
