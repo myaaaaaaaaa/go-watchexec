@@ -15,20 +15,37 @@ func lruPut[T comparable](s []T, value T, cap int) []T {
 	s = (s)[:min(len(s), cap)]
 	return s
 }
-func repeatChunks[T any](scanList []T, chunkSize, numChunks int) iter.Seq[[]T] {
-	chunks := slices.Collect(slices.Chunk(scanList, chunkSize))
-	if len(chunks) == 0 {
-		chunks = append(chunks, nil)
-	}
-
+func repeatChunks[T any](src iter.Seq[T], chunkSize, numChunks int) iter.Seq[[]T] {
 	return func(yield func([]T) bool) {
-		for {
-			for _, chunk := range chunks {
-				if !yield(chunk) {
-					return
+		var rt []T
+
+		put := func(elem T) bool {
+			rt = append(rt, elem)
+
+			if len(rt) >= chunkSize {
+				if !yield(slices.Clone(rt)) {
+					return false
 				}
 				numChunks--
 				if numChunks <= 0 {
+					return false
+				}
+				rt = rt[:0]
+			}
+			return true
+		}
+
+		for {
+			isEmpty := true
+			for elem := range src {
+				isEmpty = false
+				if !put(elem) {
+					return
+				}
+			}
+			if isEmpty {
+				var zero T
+				if !put(zero) {
 					return
 				}
 			}

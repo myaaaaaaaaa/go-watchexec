@@ -3,6 +3,7 @@ package watchexec
 import (
 	"bytes"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -51,7 +52,10 @@ func TestRepeatChunks(t *testing.T) {
 	assert := func(s string, chunkSize, numChunks int, want string) {
 		t.Helper()
 
-		got := bytes.Join(slices.Collect(repeatChunks([]byte(s), chunkSize, numChunks)), []byte(" "))
+		chunks := slices.Collect(repeatChunks(slices.Values([]byte(s)), chunkSize, numChunks))
+		assertEquals(t, len(chunks), numChunks)
+		got := bytes.Join(chunks, []byte(" "))
+		assertEquals(t, len(got), (chunkSize+1)*numChunks-1)
 		assertEquals(t, string(got), want)
 	}
 
@@ -59,11 +63,25 @@ func TestRepeatChunks(t *testing.T) {
 	assert("hello", 2, 1, "he")
 	assert("hello", 1, 2, "h e")
 	assert("hello", 2, 2, "he ll")
-	assert("hello", 3, 4, "hel lo hel lo")
+	assert("hello", 3, 4, "hel loh ell ohe")
+	assert("hello", 6, 3, "helloh ellohe llohel")
 
-	assert("", 1, 1, "")
-	assert("", 2, 1, "")
-	assert("", 3, 1, "")
-	assert("", 1, 2, " ")
-	assert("", 1, 3, "  ")
+	assert("", 1, 1, "\x00")
+	assert("", 2, 1, "\x00\x00")
+	assert("", 3, 1, "\x00\x00\x00")
+	assert("", 1, 2, "\x00 \x00")
+	assert("", 1, 3, "\x00 \x00 \x00")
+	assert("", 2, 2, "\x00\x00 \x00\x00")
+
+	for chunkSize := range 5 {
+		for numChunks := range 5 {
+			chunkSize := chunkSize + 1
+			numChunks := numChunks + 1
+
+			want := " " + strings.Repeat("\x00", chunkSize)
+			want = strings.Repeat(want, numChunks)
+			want = want[1:]
+			assert("", chunkSize, numChunks, want)
+		}
+	}
 }

@@ -82,7 +82,8 @@ func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		for chunk := range repeatChunks(slices.Sorted(maps.Keys(w.files)), filesAtOnce, cycles) {
+		files := slices.Values(slices.Sorted(maps.Keys(w.files)))
+		for chunk := range repeatChunks(files, filesAtOnce, cycles) {
 			time.Sleep(w.WaitBetweenPolls)
 
 			s := w.statUpdate(fsys, chunk)
