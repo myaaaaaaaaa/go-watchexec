@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/myaaaaaaaaa/go-watchexec"
@@ -36,6 +37,10 @@ func main() {
 		})
 	}
 	if len(args) > 0 {
+		if len(args) == 1 && strings.ContainsAny(args[0], "|&;") {
+			args = []string{"sh", "-c", args[0]}
+		}
+
 		watch(func(string) {
 			watchexec.ExecOutput(os.Stderr, args)
 		})
