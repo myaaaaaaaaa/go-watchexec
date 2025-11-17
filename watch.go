@@ -40,13 +40,19 @@ type Watcher struct {
 	lastModified int64
 }
 
-func (w *Watcher) statUpdate(fsys fs.FS, files []string) string {
+func (w *Watcher) updateModified(fsys fs.FS, files []string) string {
 	s := ""
 	for _, file := range files {
-		modified := statTime(fsys, file)
-		if w.lastModified < modified {
+		modifiedTime := int64(0)
+
+		stat, err := fs.Stat(fsys, file)
+		if err == nil {
+			modifiedTime = stat.ModTime().UnixMilli()
+		}
+
+		if w.lastModified < modifiedTime {
 			s = file
-			w.lastModified = modified
+			w.lastModified = modifiedTime
 		}
 	}
 	return s
@@ -70,13 +76,12 @@ func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 		for chunk := range repeatChunks(walk(fsys), filesAtOnce, cycles) {
 			time.Sleep(w.WaitBetweenPolls)
 
-			s := w.statUpdate(fsys, chunk)
+			s := w.updateModified(fsys, chunk)
 			if s == "" {
-				s = w.statUpdate(fsys, likelyEditing)
+				s = w.updateModified(fsys, likelyEditing)
 			}
 			if s != "" {
-				cap := filesAtOnce
-				likelyEditing = lruPut(likelyEditing, s, cap)
+				likelyEditing = lruPut(likelyEditing, s, filesAtOnce)
 			}
 
 			if !yield(s) {
@@ -84,12 +89,4 @@ func (w *Watcher) scanCycles(fsys fs.FS, cycles int) iter.Seq[string] {
 			}
 		}
 	}
-}
-
-func statTime(fsys fs.FS, f string) int64 {
-	stat, err := fs.Stat(fsys, f)
-	if err != nil {
-		return 0
-	}
-	return stat.ModTime().UnixMilli()
 }
