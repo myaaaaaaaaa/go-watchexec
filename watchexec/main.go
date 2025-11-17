@@ -20,11 +20,11 @@ func isTerminal(f fs.File) bool {
 
 func watch(f func(string)) {
 	var w watchexec.Watcher
-	w.FilesAtOnce = 4
-	w.WaitBetweenPolls = time.Millisecond * 50
+	w.FilesAtOnce = 6
+	w.WaitBetweenPolls = time.Millisecond * 100
 
 	for {
-		w.RunFor(time.Second*5, os.DirFS("."), f)
+		w.RunFor(time.Minute, os.DirFS("."), f)
 	}
 }
 

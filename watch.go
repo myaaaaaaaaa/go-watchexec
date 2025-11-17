@@ -17,10 +17,8 @@ func walk(fsys fs.FS) iter.Seq[string] {
 				return fs.SkipAll
 			}
 
-			if p == "." {
-			} else if !d.IsDir() {
-			} else if d.IsDir() {
-				if d.Name()[0] == '.' {
+			if d.IsDir() {
+				if d.Name()[0] == '.' && p != "." {
 					return fs.SkipDir
 				}
 			}
