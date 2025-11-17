@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func walk(fsys fs.FS) iter.Seq[string] {
+func walker(fsys fs.FS) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -58,22 +58,22 @@ func (w *Watcher) pollAndUpdate(fsys fs.FS, filesToPoll []string) string {
 	return modifiedFile
 }
 
-func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, f func(string)) {
-	for file := range w.iterations(fsys, int(t/w.WaitBetweenPolls)) {
-		if file != "" {
-			f(file)
+func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, handler func(string)) {
+	for modifiedFile := range w.runIterations(fsys, int(t/w.WaitBetweenPolls)) {
+		if modifiedFile != "" {
+			handler(modifiedFile)
 			w.lastModified = time.Now().UnixMilli()
 		}
 	}
 }
 
-func (w *Watcher) iterations(fsys fs.FS, cycles int) iter.Seq[string] {
+func (w *Watcher) runIterations(fsys fs.FS, n int) iter.Seq[string] {
 	filesAtOnce := max(1, w.FilesAtOnce)
 
 	return func(yield func(string) bool) {
 		var likelyEditing []string
 
-		for filesToPoll := range repeatChunks(walk(fsys), filesAtOnce, cycles) {
+		for filesToPoll := range repeatChunks(walker(fsys), filesAtOnce, n) {
 			time.Sleep(w.WaitBetweenPolls)
 
 			modifiedFile := w.pollAndUpdate(fsys, filesToPoll)

@@ -53,7 +53,7 @@ func TestWalk(t *testing.T) {
 
 		fsys, err := fs.Sub(mapfs, arg)
 		assertEquals(t, err, nil)
-		got := slices.Sorted(walk(fsys))
+		got := slices.Sorted(walker(fsys))
 		assertEquals(t, got, want)
 	}
 
@@ -109,37 +109,37 @@ func TestScan(t *testing.T) {
 		var w Watcher
 		w.FilesAtOnce = 3
 
-		got := slices.Collect(w.iterations(mapfs, 2))
+		got := slices.Collect(w.runIterations(mapfs, 2))
 		assertEquals(t, got, "[2.txt 5.txt]")
 	}
 
 	var w Watcher
 
 	want := "[   1.txt 2.txt 3.txt 4.txt 5.txt 6.txt 7.txt]"
-	got := slices.Sorted(w.iterations(mapfs, 10))
+	got := slices.Sorted(w.runIterations(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
 		want = "[         ]"
-		got = slices.Collect(w.iterations(mapfs, 10))
+		got = slices.Collect(w.runIterations(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
 	mapfs["4.txt"].ModTime = time.UnixMilli(20)
 	want = "[         4.txt]"
-	got = slices.Sorted(w.iterations(mapfs, 10))
+	got = slices.Sorted(w.runIterations(mapfs, 10))
 	assertEquals(t, got, want)
 
 	for range 3 {
 		want = "[         ]"
-		got = slices.Collect(w.iterations(mapfs, 10))
+		got = slices.Collect(w.runIterations(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 
 	for n := range 4 {
 		w.FilesAtOnce = n
 		want = "[         ]"
-		got = slices.Collect(w.iterations(mapfs, 10))
+		got = slices.Collect(w.runIterations(mapfs, 10))
 		assertEquals(t, got, want)
 	}
 }
@@ -164,7 +164,7 @@ func TestEditing(t *testing.T) {
 
 	var w Watcher
 
-	next, done := pullInf(w.iterations(mapfs, 1000))
+	next, done := pullInf(w.runIterations(mapfs, 1000))
 	defer done()
 
 	for range 25 {
@@ -218,7 +218,7 @@ func TestStat(t *testing.T) {
 	}
 
 	w := Watcher{FilesAtOnce: 1}
-	_ = slices.Collect(w.iterations(fs, 2))
+	_ = slices.Collect(w.runIterations(fs, 2))
 	assertEquals(t, counter, 3)
 }
 
@@ -236,7 +236,7 @@ func TestWait(t *testing.T) {
 			}
 
 			start := time.Now()
-			_ = slices.Collect(w.iterations(mapfs, 60))
+			_ = slices.Collect(w.runIterations(mapfs, 60))
 			assertEquals(t, time.Since(start), time.Hour)
 		}
 	})
@@ -244,7 +244,7 @@ func TestWait(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		w := Watcher{WaitBetweenPolls: time.Minute}
 		start := time.Now()
-		_ = slices.Collect(w.iterations(fstest.MapFS{}, 60))
+		_ = slices.Collect(w.runIterations(fstest.MapFS{}, 60))
 		assertEquals(t, time.Since(start), time.Hour)
 	})
 }
