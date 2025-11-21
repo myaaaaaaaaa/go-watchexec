@@ -2,6 +2,7 @@ package watchexec
 
 import (
 	"bytes"
+	"iter"
 	"slices"
 	"strings"
 	"testing"
@@ -48,6 +49,18 @@ func TestLruPut(t *testing.T) {
 	})
 }
 
+func head[T any](seq iter.Seq[T], n int) []T {
+	return slices.Collect(func(yield func(T) bool) {
+		next, stop := iter.Pull(seq)
+		defer stop()
+
+		for range n {
+			v, _ := next()
+			yield(v)
+		}
+	})
+}
+
 func TestRepeatIter(t *testing.T) {
 	t.Run("non-empty", func(t *testing.T) {
 		const STR = "qwertyuiop"
@@ -55,16 +68,7 @@ func TestRepeatIter(t *testing.T) {
 			for collectSize := range 10 {
 				inputStr := STR[:iterSize+1]
 				seq := repeatIter(slices.Values([]byte(inputStr)))
-
-				var got []byte
-				var i int
-				for c := range seq {
-					if i == collectSize {
-						break
-					}
-					got = append(got, c)
-					i++
-				}
+				got := head(seq, collectSize)
 				assertEquals(t, string(got), strings.Repeat(inputStr, collectSize)[:collectSize])
 			}
 		}
@@ -74,20 +78,25 @@ func TestRepeatIter(t *testing.T) {
 		for iterSize := range 10 {
 			for collectSize := range 10 {
 				seq := repeatIter(slices.Values(bytes.Repeat([]byte{0}, iterSize)))
-
-				var got []byte
-				var i int
-				for v := range seq {
-					if i == collectSize {
-						break
-					}
-					assertEquals(t, v, 0)
-					got = append(got, v)
-					i++
-				}
+				got := head(seq, collectSize)
 				assertEquals(t, string(got), strings.Repeat("\x00", collectSize))
 			}
 		}
+	})
+
+	t.Run("live update", func(t *testing.T) {
+		var n int
+		seq := repeatIter(func(yield func(int) bool) {
+			for range n {
+				if !yield(n) {
+					return
+				}
+			}
+			n++
+		})
+
+		got := head(seq, 12)
+		assertEquals(t, got, "[0 1 2 2 3 3 3 4 4 4 4 5]")
 	})
 }
 
