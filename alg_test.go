@@ -48,6 +48,49 @@ func TestLruPut(t *testing.T) {
 	})
 }
 
+func TestRepeatIter(t *testing.T) {
+	t.Run("non-empty", func(t *testing.T) {
+		const STR = "qwertyuiop"
+		for iterSize := range 10 {
+			for collectSize := range 10 {
+				inputStr := STR[:iterSize+1]
+				seq := repeatIter(slices.Values([]byte(inputStr)))
+
+				var got []byte
+				var i int
+				for c := range seq {
+					if i == collectSize {
+						break
+					}
+					got = append(got, c)
+					i++
+				}
+				assertEquals(t, string(got), strings.Repeat(inputStr, collectSize)[:collectSize])
+			}
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		for iterSize := range 10 {
+			for collectSize := range 10 {
+				seq := repeatIter(slices.Values(bytes.Repeat([]byte{0}, iterSize)))
+
+				var got []byte
+				var i int
+				for v := range seq {
+					if i == collectSize {
+						break
+					}
+					assertEquals(t, v, 0)
+					got = append(got, v)
+					i++
+				}
+				assertEquals(t, string(got), strings.Repeat("\x00", collectSize))
+			}
+		}
+	})
+}
+
 func TestRepeatChunks(t *testing.T) {
 	assert := func(s string, chunkSize, numChunks int, want string) {
 		t.Helper()
