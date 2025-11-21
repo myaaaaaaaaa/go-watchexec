@@ -87,16 +87,21 @@ func TestRepeatIter(t *testing.T) {
 	t.Run("live update", func(t *testing.T) {
 		var n int
 		seq := repeatIter(func(yield func(int) bool) {
+			n++
+			n := n
+			if n%2 == 0 {
+				n = 0
+			}
+
 			for range n {
 				if !yield(n) {
 					return
 				}
 			}
-			n++
 		})
 
 		got := head(seq, 12)
-		assertEquals(t, got, "[0 1 2 2 3 3 3 4 4 4 4 5]")
+		assertEquals(t, got, "[1 0 3 3 3 0 5 5 5 5 5 0]")
 	})
 }
 
