@@ -25,10 +25,7 @@ func repeatIter[T any](src iter.Seq[T]) iter.Seq[T] {
 				}
 			}
 			if isEmpty {
-				var zero T
-				if !yield(zero) {
-					return
-				}
+				return
 			}
 		}
 	}

@@ -2,8 +2,8 @@ package watchexec
 
 import (
 	"bytes"
+	"iter"
 	"slices"
-	"strings"
 	"testing"
 )
 
@@ -53,10 +53,20 @@ func TestRepeatChunks(t *testing.T) {
 		t.Helper()
 
 		chunks := slices.Collect(repeatChunks(slices.Values([]byte(s)), chunkSize, numChunks))
-		assertEquals(t, len(chunks), numChunks)
 		got := bytes.Join(chunks, []byte(" "))
-		assertEquals(t, len(got), (chunkSize+1)*numChunks-1)
 		assertEquals(t, string(got), want)
+
+		if s != "" {
+			assertEquals(t, len(chunks), numChunks)
+			if numChunks > 0 {
+				assertEquals(t, len(got), (chunkSize+1)*numChunks-1)
+			} else {
+				assertEquals(t, len(got), 0)
+			}
+		} else {
+			assertEquals(t, len(chunks), 0)
+			assertEquals(t, len(got), 0)
+		}
 	}
 
 	assert("hello", 1, 1, "h")
@@ -66,22 +76,63 @@ func TestRepeatChunks(t *testing.T) {
 	assert("hello", 3, 4, "hel loh ell ohe")
 	assert("hello", 6, 3, "helloh ellohe llohel")
 
-	assert("", 1, 1, "\x00")
-	assert("", 2, 1, "\x00\x00")
-	assert("", 3, 1, "\x00\x00\x00")
-	assert("", 1, 2, "\x00 \x00")
-	assert("", 1, 3, "\x00 \x00 \x00")
-	assert("", 2, 2, "\x00\x00 \x00\x00")
+	assert("", 1, 1, "")
+	assert("", 2, 1, "")
+	assert("", 3, 1, "")
+	assert("", 1, 2, "")
+	assert("", 1, 3, "")
+	assert("", 2, 2, "")
+}
 
-	for chunkSize := range 5 {
-		for numChunks := range 5 {
-			chunkSize := chunkSize + 1
-			numChunks := numChunks + 1
+func TestRepeatIter(t *testing.T) {
+	t.Run("non-empty", func(t *testing.T) {
+		src := []int{1, 2, 3}
+		seq := repeatIter(slices.Values(src))
+		pull, stop := iter.Pull(seq)
+		defer stop()
 
-			want := " " + strings.Repeat("\x00", chunkSize)
-			want = strings.Repeat(want, numChunks)
-			want = want[1:]
-			assert("", chunkSize, numChunks, want)
+		var got []int
+		for i := 0; i < 5; i++ {
+			v, ok := pull()
+			if !ok {
+				t.Fatal("iterator finished unexpectedly")
+			}
+			got = append(got, v)
 		}
-	}
+
+		want := []int{1, 2, 3, 1, 2}
+		if !slices.Equal(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		src := []int{}
+		seq := repeatIter(slices.Values(src))
+		pull, stop := iter.Pull(seq)
+		defer stop()
+
+		v, ok := pull()
+		if ok {
+			t.Fatalf("got %v, want nothing", v)
+		}
+	})
+
+	t.Run("can be stopped", func(t *testing.T) {
+		src := []int{1, 2, 3}
+		seq := repeatIter(slices.Values(src))
+
+		var got []int
+		for v := range seq {
+			got = append(got, v)
+			if len(got) >= 5 {
+				break
+			}
+		}
+
+		want := []int{1, 2, 3, 1, 2}
+		if !slices.Equal(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
 }
