@@ -8,14 +8,14 @@ go install github.com/myaaaaaaaaa/go-watchexec/watchexec@latest
 
 ## Features
 
-- **Command Execution:** Executes a given command when a file is changed, clearing the screen and showing a timestamp on each run.
+- **Command Execution:** Execute a given command whenever a file is changed.
 - **Unix-style Modularity:** Streams modified filenames (line-by-line) to `stdout` when the output is piped or redirected. This allows `go-watchexec` to be used as a file change event source in a command-line pipeline.
 
 ## Usage
 
 `go-watchexec` has two main modes of operation.
 
-### 1. Command Execution Mode
+### Command Execution Mode
 
 Pass a command as an argument to have it automatically re-run on any file change.
 
@@ -29,12 +29,8 @@ watchexec [command]
 # Re-run Go tests on any file change
 watchexec go test ./...
 ```
-```bash
-# Rebuild and run a server
-watchexec "go build -o myapp && ./myapp"
-```
 
-### 2. Streaming Mode
+### Streaming Mode
 
 If you pipe or redirect the output, `go-watchexec` enters streaming mode. Instead of running a command, it prints the path of each modified file to `stdout` on a new line. This allows you to compose `go-watchexec` with other command-line tools for more complex workflows.
 
@@ -52,7 +48,7 @@ In this pipeline:
 
 ## Implementation: A Polling-based Watcher
 
-This tool uses a polling-based mechanism to watch for file changes, as opposed to relying on OS-specific filesystem notification events (like Linux's `inotify`). Here's how it works and why this approach was chosen:
+This tool uses a polling-based mechanism to watch for file changes, as opposed to relying on OS-specific filesystem notification events (like Linux's `inotify`).
 
 1.  The watcher periodically scans the directory tree to get a list of all files.
 2.  It then iterates through the files, checking the "last modified" timestamp of each one.
