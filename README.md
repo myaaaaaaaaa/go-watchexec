@@ -61,3 +61,7 @@ This tool uses a polling-based mechanism to watch for file changes, as opposed t
 *   **Simplicity:** The polling approach provides robust and straightforward recursive directory monitoring. It automatically handles newly created directories without the complexity of adding new filesystem-level watches.
 
 This design choice prioritizes portability and simplicity, ensuring that `go-watchexec` works consistently everywhere.
+
+### Prioritizing Recently Modified Files
+
+To improve responsiveness, especially in large projects, the poller prioritizes files that have been modified recently. It maintains a short list of these "likely editing" files, which are checked for changes on every polling cycle. This ensures that modifications to files you are actively working on are detected almost instantly, avoiding the potential lag of a full scan across the entire directory.
