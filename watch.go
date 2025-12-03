@@ -1,8 +1,10 @@
 package watchexec
 
 import (
+	"fmt"
 	"io/fs"
 	"iter"
+	"os"
 	"time"
 )
 
@@ -62,6 +64,12 @@ func (w *Watcher) RunFor(t time.Duration, fsys fs.FS, handler func(string)) {
 	for modifiedFile := range w.runIterations(fsys, int(t/w.WaitBetweenPolls)) {
 		if modifiedFile != "" {
 			handler(modifiedFile)
+
+			if w.lastModified > time.Now().Add(time.Minute).UnixMilli() {
+				fmt.Fprintln(os.Stderr, modifiedFile, `was modified in the future, please fix this with the "touch" command`)
+				os.Exit(13)
+			}
+
 			w.lastModified = time.Now().UnixMilli()
 		}
 	}
