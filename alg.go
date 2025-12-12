@@ -24,6 +24,10 @@ func repeatIter[T any](src iter.Seq[T]) iter.Seq[T] {
 					return
 				}
 			}
+			// If the iterator is empty, a naive implementation would infinitely loop without
+			// yielding. Instead, we break the loop by yielding the zero value for the type,
+			// making the design choice that repeating an empty iterator results in an
+			// infinite sequence of zero values.
 			if isEmpty {
 				var zero T
 				if !yield(zero) {
