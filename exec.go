@@ -34,7 +34,7 @@ func ExecOutput(out io.Writer, args []string) {
 		time.Now().Format("3:04:05 PM"),
 		strings.Join(args, " "),
 		"",
-	}, "  ◄►  ")
+	}, "    ◆    ")
 
 	// Home cursor; Clear formatting; Clear screen x2
 	const CLEAR = "\x1b[H\x1b[0m\x1b[2J\x1b[3J"

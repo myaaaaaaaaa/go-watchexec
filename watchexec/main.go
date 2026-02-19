@@ -42,6 +42,7 @@ func main() {
 		}
 
 		watch(func(string) {
+			time.Sleep(time.Millisecond * 20)
 			watchexec.ExecOutput(os.Stderr, args)
 		})
 	}
