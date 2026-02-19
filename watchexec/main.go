@@ -37,7 +37,7 @@ func main() {
 		})
 	}
 	if len(args) > 0 {
-		if len(args) == 1 && strings.ContainsAny(args[0], "|&;") {
+		if len(args) == 1 && strings.ContainsAny(args[0], " |&;") {
 			args = []string{"sh", "-c", args[0]}
 		}
 
